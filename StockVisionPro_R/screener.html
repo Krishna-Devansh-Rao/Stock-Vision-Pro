@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Screener — StockVision Pro</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Screener extra styles */
+    .screener-hero {
+      background: linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(59,130,246,0.08) 100%);
+      border: 1px solid rgba(139,92,246,0.2);
+      border-radius: var(--border-radius-lg);
+      padding: 22px 24px;
+      margin-bottom: 22px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .screener-hero-icon {
+      width: 52px;
+      height: 52px;
+      background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    .screener-hero-text h2 { font-size: 1.2rem; font-weight: 800; }
+    .screener-hero-text p { font-size: 0.82rem; color: var(--text-secondary); margin-top: 3px; }
+    .screener-stats {
+      margin-left: auto;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .screener-stat { text-align: center; }
+    .screener-stat-val { font-size: 1.2rem; font-weight: 700; color: var(--text-primary); }
+    .screener-stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* Table */
+    .screener-table-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius-lg);
+      overflow: hidden;
+    }
+    .screener-table-scroll { overflow-x: auto; }
+    .screener-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 900px;
+    }
+    .screener-table th {
+      background: var(--bg-glass);
+      padding: 13px 14px;
+      text-align: left;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+      white-space: nowrap;
+      user-select: none;
+      transition: var(--transition);
+    }
+    .screener-table th:hover { color: var(--text-primary); background: var(--bg-glass-hover); }
+    .screener-table th.sorted { color: var(--accent-blue); }
+    .sort-arrow { margin-left: 4px; opacity: 0.5; font-size: 0.65rem; }
+    .screener-table td {
+      padding: 11px 14px;
+      font-size: 0.84rem;
+      border-bottom: 1px solid var(--border-color);
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+    .screener-table tr:last-child td { border-bottom: none; }
+    .screener-table tr:hover td { background: var(--bg-glass); cursor: pointer; }
+    .row-num { color: var(--text-muted); font-size: 0.75rem; min-width: 30px; }
+    .table-pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-top: 1px solid var(--border-color);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .pagination-info { font-size: 0.8rem; color: var(--text-muted); }
+    .pagination-btns { display: flex; gap: 6px; }
+    .page-btn {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+    .page-btn.active, .page-btn:hover {
+      background: var(--accent-blue);
+      color: white;
+      border-color: var(--accent-blue);
+    }
+    .page-btn:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+    /* Preset filter chips */
+    .preset-filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    .preset-chip {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border-color);
+      background: var(--bg-glass);
+      color: var(--text-secondary);
+      transition: var(--transition);
+    }
+    .preset-chip:hover, .preset-chip.active {
+      background: rgba(59,130,246,0.12);
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
+    }
+  </style>
+</head>
+<body>
+  <!-- ====== NAVBAR ====== -->
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <div class="logo-icon">📈</div>
+      Stock<span>Vision</span>&nbsp;Pro
+    </div>
+    <div class="navbar-nav">
+      <a href="dashboard.html" class="nav-link">🏠 Dashboard</a>
+      <a href="portfolio.html" class="nav-link">💼 Portfolio</a>
+      <a href="screener.html" class="nav-link active">🔎 Screener</a>
+    </div>
+    <div class="navbar-right">
+      <div class="search-wrapper">
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Search stocks..." autocomplete="off" />
+        </div>
+        <div class="search-dropdown" id="searchDropdown"></div>
+      </div>
+      <button class="theme-toggle" id="themeToggle">☀️</button>
+      <button class="user-btn" id="userBtn">👤 User</button>
+      <button class="theme-toggle" id="logoutBtn" title="Logout" style="font-size:0.85rem">🚪</button>
+    </div>
+    <div class="hamburger" id="hamburger"><span></span><span></span><span></span></div>
+  </nav>
+
+  <!-- Mobile Menu -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="dashboard.html" class="nav-link">🏠 Dashboard</a>
+    <a href="portfolio.html" class="nav-link">💼 Portfolio</a>
+    <a href="screener.html" class="nav-link active">🔎 Screener</a>
+    <button onclick="AuthManager.logout()" class="btn-danger" style="margin-top:8px;width:100%">🚪 Logout</button>
+  </div>
+
+  <!-- Ticker -->
+  <div class="ticker-banner">
+    <div class="ticker-track" id="tickerTrack"></div>
+  </div>
+
+  <!-- ====== MAIN ====== -->
+  <div class="page-wrapper">
+    <div class="container main-content">
+
+      <!-- Screener Hero -->
+      <div class="screener-hero">
+        <div class="screener-hero-icon">🔎</div>
+        <div class="screener-hero-text">
+          <h2>Stock Screener</h2>
+          <p>Filter and discover the best stocks using multiple criteria</p>
+        </div>
+        <div class="screener-stats">
+          <div class="screener-stat">
+            <div class="screener-stat-val" id="totalStocksCount">—</div>
+            <div class="screener-stat-label">Total Stocks</div>
+          </div>
+          <div class="screener-stat">
+            <div class="screener-stat-val text-green" id="gainersCount">—</div>
+            <div class="screener-stat-label">Gainers</div>
+          </div>
+          <div class="screener-stat">
+            <div class="screener-stat-val text-red" id="losersCount">—</div>
+            <div class="screener-stat-label">Losers</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Preset Filters -->
+      <div class="preset-filters" id="presetFilters">
+        <span class="preset-chip active" onclick="applyPreset('all', this)">📋 All Stocks</span>
+        <span class="preset-chip" onclick="applyPreset('largecap', this)">🏢 Large Cap</span>
+        <span class="preset-chip" onclick="applyPreset('midcap', this)">🏬 Mid Cap</span>
+        <span class="preset-chip" onclick="applyPreset('smallcap', this)">🏪 Small Cap</span>
+        <span class="preset-chip" onclick="applyPreset('gainers', this)">🚀 Top Gainers</span>
+        <span class="preset-chip" onclick="applyPreset('losers', this)">📉 Top Losers</span>
+        <span class="preset-chip" onclick="applyPreset('it', this)">💻 IT Sector</span>
+        <span class="preset-chip" onclick="applyPreset('banking', this)">🏦 Banking</span>
+        <span class="preset-chip" onclick="applyPreset('pharma', this)">💊 Pharma</span>
+        <span class="preset-chip" onclick="applyPreset('auto', this)">🚗 Auto</span>
+        <span class="preset-chip" onclick="applyPreset('energy', this)">⚡ Energy</span>
+        <span class="preset-chip" onclick="applyPreset('underpe20', this)">💡 PE &lt; 20</span>
+      </div>
+
+      <!-- FILTERS PANEL -->
+      <div class="screener-filters">
+        <h3>⚙️ Advanced Filters</h3>
+        <div class="filters-grid">
+          <div class="filter-group">
+            <label class="filter-label">Min PE Ratio</label>
+            <input type="number" id="minPE" class="filter-input" placeholder="e.g. 5" step="0.1" />
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Max PE Ratio</label>
+            <input type="number" id="maxPE" class="filter-input" placeholder="e.g. 50" step="0.1" />
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Min Price (₹)</label>
+            <input type="number" id="minPrice" class="filter-input" placeholder="e.g. 100" />
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Max Price (₹)</label>
+            <input type="number" id="maxPrice" class="filter-input" placeholder="e.g. 5000" />
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Market Cap</label>
+            <select id="mcapFilter" class="filter-select">
+              <option value="">All Market Caps</option>
+              <option value="Large Cap">Large Cap</option>
+              <option value="Mid Cap">Mid Cap</option>
+              <option value="Small Cap">Small Cap</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Sector</label>
+            <select id="sectorFilter" class="filter-select">
+              <option value="">All Sectors</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Min % Change</label>
+            <input type="number" id="minChange" class="filter-input" placeholder="e.g. -5" step="0.1" />
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Max % Change</label>
+            <input type="number" id="maxChange" class="filter-input" placeholder="e.g. 5" step="0.1" />
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Search Name/Symbol</label>
+            <input type="text" id="nameSearchFilter" class="filter-input" placeholder="e.g. TATA or IT" />
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn-filter" id="applyFilters">🔎 Apply Filters</button>
+          <button class="btn-reset" id="resetFilters">↺ Reset All</button>
+          <span style="margin-left:auto;font-size:0.8rem;color:var(--text-muted)">Click any column header to sort</span>
+        </div>
+      </div>
+
+      <!-- Results Count -->
+      <div class="results-count" id="resultCount">Showing <span>0</span> stocks</div>
+
+      <!-- Screener Table -->
+      <div class="screener-table-wrap">
+        <div class="screener-table-scroll">
+          <table class="screener-table" id="screenerTable">
+            <thead>
+              <tr>
+                <th class="row-num">#</th>
+                <th data-sort="symbol">Symbol <span class="sort-arrow">⇅</span></th>
+                <th data-sort="name">Company <span class="sort-arrow">⇅</span></th>
+                <th data-sort="exchange">Exchange <span class="sort-arrow">⇅</span></th>
+                <th data-sort="price">Price <span class="sort-arrow">⇅</span></th>
+                <th data-sort="change">% Change <span class="sort-arrow">⇅</span></th>
+                <th data-sort="volume">Volume <span class="sort-arrow">⇅</span></th>
+                <th data-sort="pe">P/E Ratio <span class="sort-arrow">⇅</span></th>
+                <th data-sort="mcap">Market Cap <span class="sort-arrow">⇅</span></th>
+                <th data-sort="sector">Sector <span class="sort-arrow">⇅</span></th>
+                <th>Chart</th>
+              </tr>
+            </thead>
+            <tbody id="screenerTableBody">
+              <tr><td colspan="11" style="text-align:center;padding:32px;color:var(--text-muted)">Loading stocks...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- Pagination -->
+        <div class="table-pagination">
+          <span class="pagination-info" id="paginationInfo">Page 1 of 1</span>
+          <div class="pagination-btns" id="paginationBtns">
+            <button class="page-btn" id="prevPage" onclick="changePage(-1)" disabled>‹</button>
+            <button class="page-btn" id="nextPage" onclick="changePage(1)">›</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Chart Modal -->
+  <div class="modal-overlay" id="chartModal" onclick="if(event.target===this)closeChartModal()">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">Stock Chart</div>
+        <button class="modal-close" onclick="closeChartModal()">✕</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <div style="text-align:center;padding:40px;color:var(--text-muted)">
+          <div class="loading-spinner" style="margin:0 auto 12px"></div>Loading...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+
+  <!-- ====== SECTOR DETAIL MODAL ====== -->
+  <div class="modal-overlay" id="sectorModal" onclick="if(event.target===this)closeSectorModal()">
+    <div class="modal-box" style="max-width:860px">
+      <div class="modal-header">
+        <div class="modal-title" id="sectorModalTitle">Sector Detail</div>
+        <button class="modal-close" onclick="closeSectorModal()">✕</button>
+      </div>
+      <div class="modal-body" id="sectorModalBody" style="max-height:72vh;overflow-y:auto">
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    /* ============================================
+       SCREENER PAGE — Extended JS
+       ============================================ */
+    let currentFilteredStocks = [];
+    let currentPage = 1;
+    const PER_PAGE = 25;
+    let sortKey = '';
+    let sortAsc = true;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initScreener();
+      updateStatsBar();
+    });
+
+    // Override renderScreenerTable for pagination
+    window.renderScreenerTable = function(stocks) {
+      currentFilteredStocks = stocks;
+      currentPage = 1;
+      renderPage();
+
+      const countEl = document.getElementById('resultCount');
+      if (countEl) countEl.innerHTML = `Showing <span>${stocks.length}</span> of ${ALL_STOCKS.length} stocks`;
+
+      updateStatsBar();
+    };
+
+    function renderPage() {
+      const tbody = document.getElementById('screenerTableBody');
+      if (!tbody) return;
+
+      const start = (currentPage - 1) * PER_PAGE;
+      const end = start + PER_PAGE;
+      const pageStocks = currentFilteredStocks.slice(start, end);
+      const total = currentFilteredStocks.length;
+      const totalPages = Math.ceil(total / PER_PAGE);
+
+      if (total === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:40px;color:var(--text-muted)">No stocks match your criteria. Try adjusting filters.</td></tr>';
+      } else {
+        tbody.innerHTML = pageStocks.map((s, i) => {
+          const { text: ct, cls } = UI.formatChange(s.change);
+          return `
+            <tr onclick="openChartModal('${s.symbol}')">
+              <td class="row-num">${start + i + 1}</td>
+              <td style="font-weight:700;color:var(--accent-blue)">${s.symbol}</td>
+              <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">
+                <div style="font-weight:500;font-size:0.84rem">${s.name}</div>
+              </td>
+              <td><span style="background:var(--bg-glass);padding:2px 7px;border-radius:5px;font-size:0.72rem;font-weight:600">${s.exchange}</span></td>
+              <td style="font-weight:700">₹${parseFloat(s.price).toLocaleString('en-IN', {minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+              <td><span class="change-badge ${cls}">${ct}</span></td>
+              <td style="font-size:0.8rem;color:var(--text-secondary)">${UI.formatVolume(s.volume)}</td>
+              <td style="font-weight:600">${s.pe === -1 ? '<span style="color:var(--text-muted)">N/A</span>' : (s.pe || 'N/A')}</td>
+              <td>
+                <span style="font-size:0.74rem;padding:3px 8px;border-radius:5px;
+                  background:${s.mcap==='Large Cap'?'rgba(59,130,246,0.12)':s.mcap==='Mid Cap'?'rgba(139,92,246,0.12)':'rgba(245,158,11,0.12)'};
+                  color:${s.mcap==='Large Cap'?'var(--accent-blue)':s.mcap==='Mid Cap'?'var(--accent-purple)':'var(--accent-gold)'}">
+                  ${s.mcap || 'N/A'}
+                </span>
+              </td>
+              <td style="font-size:0.8rem;color:var(--text-secondary)">${s.sector}</td>
+              <td onclick="event.stopPropagation()">
+                <button class="chart-btn" onclick="openChartModal('${s.symbol}')" title="View Chart">📈</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // Update pagination
+      document.getElementById('paginationInfo').textContent = `Page ${currentPage} of ${totalPages || 1} (${total} stocks)`;
+      document.getElementById('prevPage').disabled = currentPage <= 1;
+      document.getElementById('nextPage').disabled = currentPage >= totalPages;
+    }
+
+    window.changePage = function(dir) {
+      const total = currentFilteredStocks.length;
+      const totalPages = Math.ceil(total / PER_PAGE);
+      currentPage = Math.max(1, Math.min(totalPages, currentPage + dir));
+      renderPage();
+      document.querySelector('.screener-table-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    };
+
+    function updateStatsBar() {
+      document.getElementById('totalStocksCount').textContent = ALL_STOCKS.length;
+      document.getElementById('gainersCount').textContent = ALL_STOCKS.filter(s => s.change > 0).length;
+      document.getElementById('losersCount').textContent = ALL_STOCKS.filter(s => s.change < 0).length;
+    }
+
+    // Preset filter handler
+    window.applyPreset = function(type, el) {
+      document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      // Clear filter inputs
+      document.querySelectorAll('.filter-input, .filter-select').forEach(i => i.value = '');
+
+      let filtered;
+      switch(type) {
+        case 'all': filtered = ALL_STOCKS; break;
+        case 'largecap': filtered = ALL_STOCKS.filter(s => s.mcap === 'Large Cap'); break;
+        case 'midcap': filtered = ALL_STOCKS.filter(s => s.mcap === 'Mid Cap'); break;
+        case 'smallcap': filtered = ALL_STOCKS.filter(s => s.mcap === 'Small Cap'); break;
+        case 'gainers': filtered = [...ALL_STOCKS].sort((a,b) => b.change - a.change).slice(0, 30); break;
+        case 'losers': filtered = [...ALL_STOCKS].sort((a,b) => a.change - b.change).slice(0, 30); break;
+        case 'it': filtered = ALL_STOCKS.filter(s => s.sector === 'IT'); break;
+        case 'banking': filtered = ALL_STOCKS.filter(s => s.sector === 'Banking'); break;
+        case 'pharma': filtered = ALL_STOCKS.filter(s => s.sector === 'Pharma'); break;
+        case 'auto': filtered = ALL_STOCKS.filter(s => s.sector === 'Auto'); break;
+        case 'energy': filtered = ALL_STOCKS.filter(s => s.sector === 'Energy'); break;
+        case 'underpe20': filtered = ALL_STOCKS.filter(s => s.pe > 0 && s.pe < 20); break;
+        default: filtered = ALL_STOCKS;
+      }
+      renderScreenerTable(filtered);
+    };
+
+    // Extended apply filters with name search
+    const origApply = window.applyFilters;
+    window.applyFilters = function() {
+      const minPE = parseFloat(document.getElementById('minPE')?.value) || 0;
+      const maxPE = parseFloat(document.getElementById('maxPE')?.value) || 9999;
+      const minPrice = parseFloat(document.getElementById('minPrice')?.value) || 0;
+      const maxPrice = parseFloat(document.getElementById('maxPrice')?.value) || 9999999;
+      const mcap = document.getElementById('mcapFilter')?.value || '';
+      const sector = document.getElementById('sectorFilter')?.value || '';
+      const minChange = parseFloat(document.getElementById('minChange')?.value) || -100;
+      const maxChange = parseFloat(document.getElementById('maxChange')?.value) || 100;
+      const nameQ = (document.getElementById('nameSearchFilter')?.value || '').toLowerCase();
+
+      const filtered = ALL_STOCKS.filter(s => {
+        const peOk = s.pe === -1 || (s.pe >= minPE && s.pe <= maxPE);
+        const priceOk = s.price >= minPrice && s.price <= maxPrice;
+        const mcapOk = !mcap || s.mcap === mcap;
+        const sectorOk = !sector || s.sector === sector;
+        const changeOk = s.change >= minChange && s.change <= maxChange;
+        const nameOk = !nameQ || s.symbol.toLowerCase().includes(nameQ) || s.name.toLowerCase().includes(nameQ) || s.sector.toLowerCase().includes(nameQ);
+        return peOk && priceOk && mcapOk && sectorOk && changeOk && nameOk;
+      });
+
+      renderScreenerTable(filtered);
+      UI.showToast(`Found ${filtered.length} stocks`, filtered.length > 0 ? 'success' : 'info');
+      document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+    };
+
+    // Column sort
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.screener-table th[data-sort]').forEach(th => {
+        th.addEventListener('click', () => {
+          const key = th.dataset.sort;
+          if (sortKey === key) sortAsc = !sortAsc;
+          else { sortKey = key; sortAsc = true; }
+
+          document.querySelectorAll('.screener-table th').forEach(t => t.classList.remove('sorted'));
+          th.classList.add('sorted');
+          const arrow = th.querySelector('.sort-arrow');
+          if (arrow) arrow.textContent = sortAsc ? '▲' : '▼';
+
+          const sorted = [...currentFilteredStocks].sort((a, b) => {
+            let av = a[key], bv = b[key];
+            if (key === 'price' || key === 'change' || key === 'volume' || key === 'pe') {
+              av = parseFloat(av) || 0;
+              bv = parseFloat(bv) || 0;
+            }
+            if (av < bv) return sortAsc ? -1 : 1;
+            if (av > bv) return sortAsc ? 1 : -1;
+            return 0;
+          });
+
+          currentFilteredStocks = sorted;
+          renderPage();
+        });
+      });
+    });
+  </script>
+</body>
+</html>
